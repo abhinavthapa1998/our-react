@@ -1,7 +1,15 @@
 const React = {
   createElement: (tag, props, ...children) => {
     if (typeof tag === "function") {
-      return tag(props);
+      try {
+        return tag(props);
+      } catch ({ promise, key }) {
+        promise.then((data) => {
+          promiseCache.set(key, data);
+          rerender();
+        });
+        return { tag: "div", props: { children: ["I AM LOADING"] } };
+      }
     }
     const element = { tag, props: { ...props, children } };
     return element;
@@ -21,10 +29,23 @@ const useState = (initialState) => {
   stateCursor++;
   return [states[newCursor], setState];
 };
+const promiseCache = new Map();
+const createResource = (promiseReturner, key) => {
+  if (promiseCache.has(key)) {
+    return promiseCache.get(key);
+  }
+  throw { promise: promiseReturner(), key };
+};
 
 const App = () => {
   const [name, setName] = useState("Person");
   const [count, setCount] = useState(0);
+  const dogPhotoUrl = createResource(
+    fetch("https://dog.ceo/api/breeds/image/random")
+      .then((response) => response.json())
+      .then((payload) => payload.message),
+    "dogPhoto"
+  );
   return (
     <div className="react-2020">
       <h1>Hello, {name}!</h1>
@@ -35,6 +56,7 @@ const App = () => {
         placeholder="name"
       />
       <h2>The count is:{count}</h2>
+      <img alt="good boi" src={dogPhotoUrl} />
       <button onclick={() => setCount(count + 1)}>+</button>
       <button onclick={() => setCount(count - 1)}>-</button>
       <p>

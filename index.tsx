@@ -5,7 +5,7 @@ const React = {
     }
     const element = { tag, props: { ...props, children } };
     return element;
-  }
+  },
 };
 
 const App = () => (
@@ -18,4 +18,27 @@ const App = () => (
     </p>
   </div>
 );
-<App />;
+const render = (reactElementOrStringOrNumber, container) => {
+  if (["string", "number"].includes(typeof reactElementOrStringOrNumber)) {
+    container.appendChild(
+      document.createTextNode(String(reactElementOrStringOrNumber))
+    );
+    return;
+  }
+  const actualDOMElement = document.createElement(
+    reactElementOrStringOrNumber.tag
+  );
+  if (reactElementOrStringOrNumber.props) {
+    Object.keys(reactElementOrStringOrNumber.props)
+      .filter((p) => p !== "children")
+      .forEach((p) => (actualDOMElement[p] = reactElementOrStringOrNumber[p]));
+  }
+  if (reactElementOrStringOrNumber.props.children) {
+    reactElementOrStringOrNumber.props.children.forEach((child) =>
+      render(child, actualDOMElement)
+    );
+  }
+  container.appendChild(actualDOMElement);
+};
+
+render(<App />, document.querySelector("#app"));
